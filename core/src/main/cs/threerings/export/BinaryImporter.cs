@@ -47,12 +47,12 @@ public class BinaryImporter : Importer
         } else if (_ctx == null) {
             // verify the preamble
             uint magic = _in.ReadUInt32();
-            if (magic != BinaryExporter2.MAGIC_NUMBER) {
+            if (magic != BinaryExporter.MAGIC_NUMBER) {
                 throw new Exception("Invalid magic number [magic=" + magic.ToString("X") + "].");
             }
             byte version = _in.ReadByte();
             switch (version) {
-            case BinaryExporter2.VERSION:
+            case BinaryExporter.VERSION:
                 // that's our version!
                 break;
 
@@ -82,7 +82,7 @@ public class BinaryImporter : Importer
             }
 
             int flags = Streams.readVarInt(_in.BaseStream);
-            bool compressed = (flags & BinaryExporter2.COMPRESSED_FORMAT_FLAG) != 0;
+            bool compressed = (flags & BinaryExporter.COMPRESSED_FORMAT_FLAG) != 0;
 
             // the rest of the stream may be compressed
             if (compressed) {

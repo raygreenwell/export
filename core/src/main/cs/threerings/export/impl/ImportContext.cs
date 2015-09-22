@@ -88,7 +88,7 @@ public class ImportContext
                     "target type", target.GetType(),
                     "field name", field.Name,
                     "field type", field.FieldType,
-                    "value type", (value == null) ? "<null>" : value.GetType());
+                    "value type", (value == null) ? (object)"<null>" : (object)value.GetType());
         }
     }
 

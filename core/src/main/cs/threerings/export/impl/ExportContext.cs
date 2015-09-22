@@ -6,6 +6,7 @@ using System.IO;
 
 using MiscUtil.IO;
 
+using threerings.export; // TODO
 using threerings.trinity.util;
 
 // TODO: stop using eout to write stuff
