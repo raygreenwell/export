@@ -527,10 +527,13 @@ public class MultisetTypeData : TypeData
         // TODO: we should consider making a non-generic IMuliset interface for easy wildcarding
         TypeData elementType = typeArgs[0];
         Type fullType = value.GetType();
-        IEnumerable en = (IEnumerable)fullType.GetMethod("EntrySet").Invoke(value, null);
-        int size = en.Cast<object>().Count();
-
+        int size = (int)fullType.GetProperty("ElementCount").GetValue(value, null);
         ctx.writeLength(size);
+        if (size == 0) {
+            return;
+        }
+
+        IEnumerable en = (IEnumerable)fullType.GetMethod("EntrySet").Invoke(value, null);
         PropertyInfo getKey = null, getVal = null;
         foreach (var entry in en) {
             if (getKey == null) {
