@@ -4,8 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-using MiscUtil.IO;
-
 using threerings.export; // TODO
 using threerings.trinity.util;
 
@@ -13,12 +11,12 @@ using threerings.trinity.util;
 // Also include the base stream?
 public class ExportContext
 {
-    public readonly EndianBinaryWriter eout;
+    /** Public access to the stream... */
+    public Stream stream;
 
-    public ExportContext (EndianBinaryWriter eout)
+    public ExportContext (Stream outStream)
     {
-        this.eout = eout;
-        _stream = eout.BaseStream;
+        stream = outStream;
 
         // populate the bootstrap types
         foreach (TypeData type in TypeDatas.BOOTSTRAP) {
@@ -63,22 +61,74 @@ public class ExportContext
         writeValue(value, expectedType);
     }
 
+    public void writeBool (bool value)
+    {
+        stream.WriteByte(value ? (byte)1 : (byte)0);
+    }
+
+    public void writeSbyte (sbyte value)
+    {
+        stream.WriteByte(unchecked((byte)value));
+    }
+
+    public void writeChar (char value)
+    {
+        stream.WriteByte(unchecked((byte)((value >> 8) & 0xFF)));
+        stream.WriteByte(unchecked((byte)(value & 0xFF)));
+    }
+
+    public void writeShort (short value)
+    {
+        stream.WriteByte(unchecked((byte)((value >> 8) & 0xFF)));
+        stream.WriteByte(unchecked((byte)(value & 0xFF)));
+    }
+
+    public void writeInt (int value)
+    {
+        stream.WriteByte(unchecked((byte)((value >> 24) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 16) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 8) & 0xFF)));
+        stream.WriteByte(unchecked((byte)(value & 0xFF)));
+    }
+
+    public void writeLong (long value)
+    {
+        stream.WriteByte(unchecked((byte)((value >> 56) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 48) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 40) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 32) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 24) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 16) & 0xFF)));
+        stream.WriteByte(unchecked((byte)((value >> 8) & 0xFF)));
+        stream.WriteByte(unchecked((byte)(value & 0xFF)));
+    }
+
+    public void writeFloat (float value)
+    {
+        writeInt(new IntFloatUnion(value).asInt);
+    }
+
+    public void writeDouble (double value)
+    {
+        writeLong(BitConverter.DoubleToInt64Bits(value));
+    }
+
     /**
      * Convenience to write a string to the stream.
      */
     public void writeString (string value)
     {
-        Streams.writeVarString(_stream, value);
+        Streams.writeVarString(stream, value);
     }
 
     public void writeId (int id)
     {
-        Streams.writeVarInt(_stream, id);
+        Streams.writeVarInt(stream, id);
     }
 
     public void writeLength (int len)
     {
-        Streams.writeVarInt(_stream, len);
+        Streams.writeVarInt(stream, len);
     }
 
     /**
@@ -299,8 +349,6 @@ public class ExportContext
         toMap = null;
         return false;
     }
-
-    protected Stream _stream;
 
     protected IDictionary<object, int> _objectIds =
             new Dictionary<object, int>(new IdentityComparer<object>());

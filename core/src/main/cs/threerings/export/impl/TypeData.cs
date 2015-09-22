@@ -169,13 +169,13 @@ public class BoolTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((bool)value);
+        ctx.writeBool((bool)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return ctx.ein.ReadBoolean();
+        return ctx.readBool();
     }
 }
 
@@ -192,13 +192,13 @@ public class IntTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((int)value);
+        ctx.writeInt((int)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return ctx.ein.ReadInt32();
+        return ctx.readInt();
     }
 }
 
@@ -215,13 +215,13 @@ public class LongTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((long)value);
+        ctx.writeLong((long)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return ctx.ein.ReadInt64();
+        return ctx.readLong();
     }
 }
 
@@ -238,13 +238,13 @@ public class ShortTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((short)value);
+        ctx.writeShort((short)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return ctx.ein.ReadInt16();
+        return ctx.readShort();
     }
 }
 
@@ -261,13 +261,13 @@ public class SbyteTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((sbyte)value);
+        ctx.writeSbyte((sbyte)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return ctx.ein.ReadSByte();
+        return ctx.readSbyte();
     }
 }
 
@@ -284,13 +284,13 @@ public class CharTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((char)value);
+        ctx.writeChar((char)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return (char)ctx.ein.Read();
+        return ctx.readChar();
     }
 }
 
@@ -307,13 +307,13 @@ public class FloatTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((float)value);
+        ctx.writeFloat((float)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return ctx.ein.ReadSingle();
+        return ctx.readFloat();
     }
 }
 
@@ -330,13 +330,13 @@ public class DoubleTypeData : ValueTypeData
     override
     public void writeObject (ExportContext ctx, object value, TypeData[] typeArguments = null)
     {
-        ctx.eout.Write((double)value);
+        ctx.writeDouble((double)value);
     }
 
     override
     public object readObject (ImportContext ctx, TypeData[] typeArguments = null)
     {
-        return ctx.ein.ReadDouble();
+        return ctx.readDouble();
     }
 }
 

@@ -7,9 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-using MiscUtil.IO;
-using MiscUtil.Conversion;
-
 using Ionic.Zlib;
 
 using threerings.trinity.util;
@@ -36,9 +33,9 @@ public class BinaryExporter : Exporter
      * @param compress if true, compress the output.
      * @param disposeBase whether to Dispose() the underlying stream when we're disposed.
      */
-    public BinaryExporter (Stream outstream, bool compress = true, bool disposeBase = true)
+    public BinaryExporter (Stream outStream, bool compress = true, bool disposeBase = true)
     {
-        _out = new EndianBinaryWriter(EndianBitConverter.Big, outstream);
+        _out = outStream;
         _compress = compress;
         _disposeBase = disposeBase;
     }
@@ -47,23 +44,22 @@ public class BinaryExporter : Exporter
     public void writeObject (object obj)
     {
         if (_ctx == null) {
+            ExportContext ctx = new ExportContext(_out);
+
             // write the preamble
-            _out.Write(MAGIC_NUMBER);
-            _out.Write(VERSION);
+            ctx.writeInt(unchecked((int)MAGIC_NUMBER));
+            ctx.writeSbyte(unchecked((sbyte)VERSION));
             int flags = 0;
             if (_compress) {
                 flags |= COMPRESSED_FORMAT_FLAG;
             }
-            Streams.writeVarInt(_out.BaseStream, flags);
+            Streams.writeVarInt(_out, flags);
 
             // everything thereafter will be compressed if so requested
             if (_compress) {
-                _out = new EndianBinaryWriter(EndianBitConverter.Big,
-                        new ZlibStream(_out.BaseStream, CompressionMode.Compress, !_disposeBase));
+                ctx.stream = _out = new ZlibStream(_out, CompressionMode.Compress, !_disposeBase);
             }
-
-            // complete the setup
-            _ctx = new ExportContext(_out);
+            _ctx = ctx;
         }
 
         _ctx.writeObject(obj, ObjectTypeData.INSTANCE);
@@ -82,7 +78,7 @@ public class BinaryExporter : Exporter
     }
 
     /** The stream that we use for writing data. */
-    protected EndianBinaryWriter _out;
+    protected Stream _out;
 
     /** Whether or not to compress the output. */
     protected readonly bool _compress;

@@ -6,19 +6,17 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-using MiscUtil.IO;
-
 using threerings.export; // TEMP
 using threerings.trinity.util;
 
 public class ImportContext
 {
-    public readonly EndianBinaryReader ein;
+    /** Public access to the stream... */
+    public Stream stream;
 
-    public ImportContext (EndianBinaryReader ein)
+    public ImportContext (Stream inStream)
     {
-        this.ein = ein;
-        _stream = ein.BaseStream;
+        stream = inStream;
     }
 
     // TODO: this will change into something whereby the warning types are enumerated
@@ -60,19 +58,69 @@ public class ImportContext
         return value;
     }
 
+    public bool readBool ()
+    {
+        return (stream.ReadByte() != 0);
+    }
+
+    public sbyte readSbyte ()
+    {
+        return (sbyte)stream.ReadByte();
+    }
+
+    public char readChar ()
+    {
+        return (char)((stream.ReadByte() << 8) | stream.ReadByte());
+    }
+
+    public short readShort ()
+    {
+        return (short)((stream.ReadByte() << 8) | stream.ReadByte());
+    }
+
+    public int readInt ()
+    {
+        return (stream.ReadByte() << 24) |
+                (stream.ReadByte() << 16) |
+                (stream.ReadByte() << 8) |
+                stream.ReadByte();
+    }
+
+    public long readLong ()
+    {
+        return (((long)stream.ReadByte()) << 56) |
+                (((long)stream.ReadByte()) << 48) |
+                (((long)stream.ReadByte()) << 40) |
+                (((long)stream.ReadByte()) << 32) |
+                (((long)stream.ReadByte()) << 24) |
+                (((long)stream.ReadByte()) << 16) |
+                (((long)stream.ReadByte()) << 8) |
+                ((long)stream.ReadByte());
+    }
+
+    public float readFloat ()
+    {
+        return new IntFloatUnion(readInt()).asFloat;
+    }
+
+    public double readDouble ()
+    {
+        return BitConverter.Int64BitsToDouble(readLong());
+    }
+
     public string readString ()
     {
-        return Streams.readVarString(_stream);
+        return Streams.readVarString(stream);
     }
 
     public int readId ()
     {
-        return Streams.readVarInt(_stream);
+        return Streams.readVarInt(stream);
     }
 
     public int readLength ()
     {
-        return Streams.readVarInt(_stream);
+        return Streams.readVarInt(stream);
     }
 
     /**
@@ -169,8 +217,6 @@ public class ImportContext
         _types[nextTypeId] = type;
         return type;
     }
-
-    protected Stream _stream;
 
     protected List<TypeData> _types = new List<TypeData>(TypeDatas.BOOTSTRAP);
 

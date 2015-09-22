@@ -7,9 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-using MiscUtil.IO;
-using MiscUtil.Conversion;
-
 using Ionic.Zlib;
 
 using threerings.trinity.util;
@@ -28,7 +25,7 @@ public class BinaryImporter : Importer
      */
     public BinaryImporter (Stream inStream, bool disposeBase = true)
     {
-        _in = new EndianBinaryReader(EndianBitConverter.Big, inStream);
+        _in = inStream;
         _disposeBase = disposeBase;
     }
 
@@ -45,12 +42,14 @@ public class BinaryImporter : Importer
             throw new EndOfStreamException("importer already closed");
 
         } else if (_ctx == null) {
+            ImportContext ctx = new ImportContext(_in);
+
             // verify the preamble
-            uint magic = _in.ReadUInt32();
+            uint magic = (uint)ctx.readInt();
             if (magic != BinaryExporter.MAGIC_NUMBER) {
                 throw new Exception("Invalid magic number [magic=" + magic.ToString("X") + "].");
             }
-            byte version = _in.ReadByte();
+            byte version = (byte)ctx.readSbyte();
             switch (version) {
             case BinaryExporter.VERSION:
                 // that's our version!
@@ -67,7 +66,7 @@ public class BinaryImporter : Importer
                 const int BUF_SIZE = 4096;
                 byte[] buf = new byte[BUF_SIZE];
                 while (true) {
-                    int count = _in.BaseStream.Read(buf, 0, BUF_SIZE);
+                    int count = _in.Read(buf, 0, BUF_SIZE);
                     if (count == 0) {
                         break;
                     }
@@ -81,16 +80,15 @@ public class BinaryImporter : Importer
                 throw new Exception(string.Format("Invalid version [version=%d].", version));
             }
 
-            int flags = Streams.readVarInt(_in.BaseStream);
+            int flags = Streams.readVarInt(_in);
             bool compressed = (flags & BinaryExporter.COMPRESSED_FORMAT_FLAG) != 0;
 
             // the rest of the stream may be compressed
             if (compressed) {
-                _in = new EndianBinaryReader(EndianBitConverter.Big,
-                        new ZlibStream(_in.BaseStream, CompressionMode.Decompress, !_disposeBase));
+                ctx.stream = _in = new ZlibStream(_in, CompressionMode.Decompress, !_disposeBase);
             }
 
-            _ctx = new ImportContext(_in);
+            _ctx = ctx;
         }
 
         return (T)_ctx.readObject(ObjectTypeData.INSTANCE);
@@ -99,13 +97,13 @@ public class BinaryImporter : Importer
     override
     public void Dispose ()
     {
-        if (_disposeBase || (_in.BaseStream is ZlibStream)) {
+        if (_disposeBase || (_in is ZlibStream)) {
             _in.Dispose();
         }
     }
 
     /** The stream that we use for reading data. */
-    protected EndianBinaryReader _in;
+    protected Stream _in;
 
     /** Should we dispose our base stream when we're disposed? */
     protected readonly bool _disposeBase;
