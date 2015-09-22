@@ -1,4 +1,4 @@
-namespace threerings.export {
+namespace threerings.export2 {
 
 using System;
 using System.Collections;
@@ -14,7 +14,7 @@ using Ionic.Zlib;
 
 using threerings.trinity.util;
 
-using threerings.export.impl;
+using threerings.export2.impl;
 
 /**
  * Exports to a compact binary format.

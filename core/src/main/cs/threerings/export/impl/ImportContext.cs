@@ -1,9 +1,10 @@
-namespace threerings.export.impl {
+namespace threerings.export2.impl {
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 using MiscUtil.IO;
 

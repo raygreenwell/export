@@ -1,4 +1,4 @@
-namespace threerings.export.impl {
+namespace threerings.export2.impl {
 
 using System;
 using System.Collections.Generic;

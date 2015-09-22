@@ -1,4 +1,4 @@
-namespace threerings.export {
+namespace threerings.export2 {
 
 using System;
 using System.Collections.Generic;
