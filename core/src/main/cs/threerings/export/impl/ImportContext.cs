@@ -165,21 +165,22 @@ public class ImportContext
         string name;
         TypeData baseType;
         TypeData[] typeArgs;
-        int typeKind = flagsAndInfo & 0x3;
-        int flags = (flagsAndInfo >> 2) & 0x1;
-        int args = (flagsAndInfo >> 3);
+        Type sysType;
+        int typeKind = flagsAndInfo & 0x7;
+        int flags = (flagsAndInfo >> 3) & 0x1;
+        int args = (flagsAndInfo >> 4);
 
         TypeData type;
         switch (typeKind) {
         default:
             name = TypeMapper.convertTypeFromJava(readString());
-            Type systemType = TypeUtil.getType(name);
+            sysType = TypeUtil.getType(name);
             // TODO: different for unkown types? Right now IRTD handles both.
-            if (systemType == null) {
+            if (sysType == null) {
                 warn("Unknown type will be dropped: " + name);
             }
             bool isFinal = (flags & TypeDatas.IS_FINAL_FLAG) != 0;
-            type = new ImportingReflectiveTypeData(systemType, isFinal);
+            type = new ImportingReflectiveTypeData(sysType, isFinal);
             break;
 
         case 1:
@@ -191,7 +192,7 @@ public class ImportContext
             for (int ii = 0; ii < args; ii++) {
                 typeArgs[ii] = readType();
             }
-            Type sysType = TypeUtil.getType(giBase.name + "`" + giBase.args)
+            sysType = TypeUtil.getType(giBase.name + "`" + giBase.args)
                     .MakeGenericType(typeArgs.Select(t => t.getType()).ToArray());
             type = new GenericImportingReflectiveTypeData(sysType, baseType, typeArgs);
             break;
@@ -210,6 +211,18 @@ public class ImportContext
 //            this.logInfo("Read type",
 //                    "baseType", baseType.getType());
             type = new ParameterizedTypeData(baseType, typeArgs);
+            break;
+
+        case 4:
+            name = TypeMapper.convertTypeFromJava(readString());
+            sysType = TypeUtil.getType(name);
+            if (sysType == null) {
+                warn("Unknown enum type: " + name);
+            } else if (!sysType.IsEnum) {
+                warn("Type not enum: " + name);
+                sysType = null;
+            }
+            type = new EnumTypeData(sysType);
             break;
         }
 

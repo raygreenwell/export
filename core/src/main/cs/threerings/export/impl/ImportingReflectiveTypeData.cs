@@ -35,6 +35,7 @@ public class ImportingReflectiveTypeData : TypedTypeData
     {
         object value = (_type == null) ? null : Activator.CreateInstance(_type);
         int fieldCount = ctx.readLength();
+        this.logInfo("Reading " + fieldCount + " fields...");
         for (int ii = 0; ii < fieldCount; ii++) {
             int fieldId = ctx.readId();
             FieldData field;
@@ -45,6 +46,9 @@ public class ImportingReflectiveTypeData : TypedTypeData
                 // ASSERT the fieldId
                 // TODO
                 if (fieldId != _fields.Count) {
+                    this.logWarning("Unexpected field id!",
+                            "expected", _fields.Count,
+                            "got", fieldId);
                     throw new Exception("Unexpected field id!");
                 }
 
@@ -54,6 +58,9 @@ public class ImportingReflectiveTypeData : TypedTypeData
                 FieldInfo fieldInfo;
                 if (_fieldInfo != null) {
                     _fieldInfo.TryGetValue(name, out fieldInfo);
+                    if (_fieldInfo == null) {
+                        ctx.warn("Importing class no longer has field: " + name);
+                    }
                 } else {
                     fieldInfo = null;
                 }

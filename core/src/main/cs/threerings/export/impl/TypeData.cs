@@ -595,11 +595,13 @@ public class EnumTypeData : TypedTypeData
     public object readObject (ImportContext ctx, TypeData[] typeArgs = null)
     {
         string s = ctx.readString();
-        try {
-            return Enum.Parse(_type, s);
+        if (_type != null) {
+            try {
+                return Enum.Parse(_type, s);
 
-        } catch (ArgumentException) {
-            ctx.warn("could not find enum constant '" + s + "' in type " + _type);
+            } catch (ArgumentException) {
+                ctx.warn("could not find enum constant '" + s + "' in type " + _type);
+            }
         }
         return null;
     }

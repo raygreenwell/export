@@ -175,6 +175,9 @@ public class ExportContext
         } else if (type is GenericExportingReflectiveTypeData) {
             typeKind = 1;
 
+        } else if (type is EnumTypeData) {
+            typeKind = 4;
+
         } else {
             if (type.isFinal()) {
                 flags |= TypeDatas.IS_FINAL_FLAG;
@@ -183,7 +186,7 @@ public class ExportContext
         }
 
         // TODO: remove magic numbers
-        int id = typeId + typeKind + (flags << 2) + (args << 3);
+        int id = typeId + typeKind + (flags << 3) + (args << 4);
 
         writeId(id);
 
@@ -230,6 +233,9 @@ public class ExportContext
         // 3
         BASE_TYPE,
 
+        // 4 ???
+        ENUM_TYPE,
+
         /** Fully parameterizes a generic definition.
          * Followed by: type of base, followed by the types of the args. */
         // TODO: The ArgumentMap case.
@@ -253,6 +259,9 @@ public class ExportContext
         } else*/ if (type.IsArray) {
             TypeData[] elementType = new TypeData[] { getTypeData(type.GetElementType()) };
             typeData = new ParameterizedTypeData(type, ArrayTypeData.INSTANCE, elementType);
+
+        } else if (type.IsEnum) {
+            typeData = new EnumTypeData(type);
 
         } else if (type.IsGenericType && !type.ContainsGenericParameters) {
             TypeData baseType = getTypeData(type.GetGenericTypeDefinition());
