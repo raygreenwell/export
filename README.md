@@ -3,6 +3,8 @@ Export 2.0
 
 An evolution of the Three Rings 'export' serialization system for Java and C#.
 
+(Work in progress! None of this works yet. Not actively being developed presently.)
+
 GOALS
 - A larger set of built-in types including standard Collection types.
 - Full type information is transmitted, including generics.
