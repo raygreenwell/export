@@ -1,0 +1,247 @@
+package com.threerings.export2;
+
+import java.io.Closeable;
+import java.io.File;
+import java.io.IOException;
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+
+import java.lang.reflect.Type;
+
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMultiset;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multiset;
+
+import com.fasterxml.classmate.ResolvedType;
+import com.fasterxml.classmate.TypeResolver;
+
+import com.threerings.config.ArgumentMap;
+
+import com.threerings.math.Matrix3f;
+import com.threerings.math.Matrix4f;
+import com.threerings.math.Vector2f;
+import com.threerings.math.Vector3f;
+import com.threerings.math.Quaternion;
+
+import com.threerings.opengl.renderer.Color4f;
+
+import static com.threerings.export.Log.log;
+
+/**
+ * Used to write {@link Exportable} objects.  Other common object types are supported as well:
+ * <code>Boolean, Byte, Character, Short, Integer, Long, Float, Double, String, boolean[], byte[],
+ * char[], short[], int[], long[], float[], double[], Object[], Collection, Map, Enum, ByteBuffer,
+ * CharBuffer, DoubleBuffer, FloatBuffer, IntBuffer, LongBuffer, ShortBuffer, ...</code>.
+ *
+ * @see Exportable
+ */
+public abstract class Exporter
+    implements Closeable
+{
+    /**
+     * Can be used to rewrite objects on as they are exported.
+     */
+    public interface Replacer
+    {
+        /**
+         * Return the replacement to use, or null.
+         *
+         * @param value the value to be written
+         * @param clazz the expected class type
+         */
+        public Replacement getReplacement (Object value, Class<?> clazz);
+    }
+
+    /**
+     * Helper class for Replacer.
+     */
+    public static class Replacement
+    {
+        /** The new value to write instead. */
+        public final Object value;
+
+        /** The class type to write instead. */
+        public final Class<?> clazz;
+
+        /**
+         * Construct a replacement. */
+        public Replacement (Object value, Class<?> clazz)
+        {
+            this.value = value;
+            this.clazz = clazz;
+        }
+    }
+
+    /**
+     * Set the replacer to use with this Exporter.
+     */
+    public Exporter setReplacer (Replacer replacer)
+    {
+        _replacer = replacer;
+        return this;
+    }
+
+    /**
+     * Writes the object to the underlying stream.
+     * There can be no ambiguity of the type...
+     */
+    public final void writeObject (Object object)
+        throws IOException
+    {
+        writeObject(object, (object == null) ? Object.class : object.getClass());
+    }
+
+    /**
+     * Writes the object to the underlying stream.
+     */
+    public final void writeObject (Object object, Type type)
+        throws IOException
+    {
+        ResolvedType rtype = _typeResolver.resolveType(type);
+        if (object != null) {
+            Preconditions.checkArgument(object.getClass().isAssignableFrom(rtype.getErasedType()));
+        }
+        // TODO: ensure that the type is fully resolved?
+
+        writeObject(object, rtype);
+    }
+
+    /**
+     * Writes out any remaining data and closes the underlying stream.
+     */
+    public abstract void close ()
+        throws IOException;
+
+    /**
+     * Writes out any remaining data without closing the underlying stream.
+     */
+    public abstract void finish ()
+        throws IOException;
+
+    /**
+     * Writes the object to the underlying stream.
+     */
+    protected abstract void writeObject (Object object, ResolvedType type)
+        throws IOException;
+
+    /**
+     * Writes an object's fields.
+     */
+    // TODO: this needs to move!
+    protected void writeFields (Exportable object)
+        throws IOException
+    {
+        Object oobject = _object;
+        ObjectMarshaller omarshaller = _marshaller;
+        try {
+            _object = object;
+            _marshaller = ObjectMarshaller.getObjectMarshaller(object.getClass());
+            _marshaller.writeFields(_object, this, true);
+        } finally {
+            _object = oobject;
+            _marshaller = omarshaller;
+        }
+    }
+
+    /**
+     * Gets the actual class of the specified value, performing some slight modifications for
+     * buffer instances and enums, etc.
+     */
+    protected static Class<?> getClass (Object value)
+    {
+        if (value instanceof Enum) {
+            // check enum first- no getting around this with interfaces
+            return ((Enum)value).getDeclaringClass();
+
+        } else if (value instanceof Exportable) {
+            return value.getClass(); // you're the boss
+
+        } else if (value instanceof Collection) {
+            if (value instanceof List) {
+                return (value instanceof ImmutableList)
+                        ? ImmutableList.class
+                        : ArrayList.class;
+            } else if (value instanceof Set) {
+                return (value instanceof ImmutableSet)
+                        ? ImmutableSet.class
+                        : (value instanceof EnumSet) ? EnumSet.class : HashSet.class;
+            } else if (value instanceof Multiset) {
+                return (value instanceof ImmutableMultiset)
+                        ? ImmutableMultiset.class
+                        : HashMultiset.class;
+            }
+            // for now return ArrayList for unknown collections
+            return ArrayList.class;
+
+        } else if (value instanceof Map) {
+            // we make a concession to ArgumentMap in here
+            return (value instanceof ImmutableMap)
+                    ? ImmutableMap.class
+                    : (value instanceof ArgumentMap) ? ArgumentMap.class : HashMap.class;
+
+        } else if (value instanceof Buffer) {
+            if (value instanceof ByteBuffer) {
+                return ByteBuffer.class;
+            } else if (value instanceof CharBuffer) {
+                return CharBuffer.class;
+            } else if (value instanceof DoubleBuffer) {
+                return DoubleBuffer.class;
+            } else if (value instanceof FloatBuffer) {
+                return FloatBuffer.class;
+            } else if (value instanceof IntBuffer) {
+                return IntBuffer.class;
+            } else if (value instanceof LongBuffer) {
+                return LongBuffer.class;
+            } else if (value instanceof ShortBuffer) {
+                return ShortBuffer.class;
+            }
+            // fall out to default
+
+        } else if (value instanceof File) {
+            return File.class;
+        }
+
+        // default case
+        return value.getClass();
+    }
+
+    /** Our type resolver. */
+    protected TypeResolver _typeResolver = new TypeResolver();
+
+    protected ResolvedType _javaObjectType = _typeResolver.resolve(Object.class);
+
+    /** The object whose fields are being written. */
+    protected Object _object;
+
+    /** The marshaller for the current object. */
+    protected ObjectMarshaller _marshaller;
+
+    /** An optional replacer, for rewriting objects on their way out. */
+    protected Replacer _replacer;
+
+    /** Used for object comparisons using {@link Arrays#deepEquals}. */
+    protected Object[] _a1 = new Object[1], _a2 = new Object[1];
+
+    /** A Dummy enum class used to provide satisfaction to the type system. */
+    protected enum DummyEnum {}
+}

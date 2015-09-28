@@ -1,0 +1,90 @@
+package com.threerings.export2;
+
+import java.io.Closeable;
+import java.io.IOException;
+
+import java.lang.reflect.Field;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+
+import com.threerings.math.Matrix3f;
+import com.threerings.math.Matrix4f;
+import com.threerings.math.Quaternion;
+import com.threerings.math.Vector2f;
+import com.threerings.math.Vector3f;
+import com.threerings.opengl.renderer.Color4f;
+
+/**
+ * Used to read {@link Exportable} objects.  Other common object types are supported as well
+ * (@see {@link Exporter}).
+ *
+ * @see Exportable
+ */
+public abstract class Importer
+    implements Closeable
+{
+    /**
+     * Imports an object from the underlying stream.
+     */
+    public abstract Object readObject ()
+        throws IOException;
+
+    /**
+     * Writes the default fields of the object.
+     */
+    public void defaultReadFields ()
+        throws IOException
+    {
+        if (_marshaller == null) {
+            throw new IllegalStateException("Not invoking a custom readFields method.");
+        }
+        _marshaller.readFields(_object, this, false);
+    }
+
+    /**
+     * Closes the underlying stream.
+     */
+    public abstract void close ()
+        throws IOException;
+
+    /**
+     * Internal method for reading from a FieldMarshaller.
+     */
+    protected Object read (String name, Object defvalue, Field field)
+        throws IOException
+    {
+        @SuppressWarnings("unchecked")
+        Class<Object> clazz = (Class<Object>)field.getType();
+        return read(name, defvalue, clazz);
+    }
+
+    /**
+     * Reads an object's fields.
+     */
+    protected void readFields (Exportable object)
+        throws IOException
+    {
+        Object oobject = _object;
+        ObjectMarshaller omarshaller = _marshaller;
+        try {
+            _object = object;
+            _marshaller = ObjectMarshaller.getObjectMarshaller(object.getClass());
+            _marshaller.readFields(_object, this, true);
+        } finally {
+            _object = oobject;
+            _marshaller = omarshaller;
+        }
+    }
+
+    /** The object whose fields are being read. */
+    protected Object _object;
+
+    /** The marshaller for the current object. */
+    protected ObjectMarshaller _marshaller;
+}
