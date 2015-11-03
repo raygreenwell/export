@@ -11,16 +11,11 @@ using threerings.trinity.util;
 public abstract class Exporter
     : IDisposable
 {
-    [System.Diagnostics.Conditional("DEBUG")]
-    public static void debug (object msg, params object[] args)
-    {
-        Logger.getLogger(typeof(Exporter)).info(msg, args);
-    }
-
     /**
      * Writes the object to the underlying stream.
      */
-    public abstract void writeObject (object obj);
+    abstract
+    public void writeObject (object obj);
 
     // from IDisposable
     abstract
@@ -35,6 +30,15 @@ public abstract class Exporter
     {
         // nothing special yet here on the C# side, as the TypeMapper will convert to Java types
         return value.GetType();
+    }
+
+    /**
+     * Debugging logging.
+     */
+    [System.Diagnostics.Conditional("DEBUG")]
+    public static void debug (object msg, params object[] args)
+    {
+        Logger.getLogger(typeof(Exporter)).info(msg, args);
     }
 }
 }

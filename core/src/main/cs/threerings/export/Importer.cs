@@ -11,21 +11,28 @@ using threerings.trinity.util;
 public abstract class Importer
     : IDisposable
 {
+    /**
+     * Read the next object off the underlying stream.
+     */
+    abstract
+    public object readObject ();
+
+    // TODO
+    abstract
+    public T readObject<T> ();
+
+    // from IDisposable
+    abstract
+    public void Dispose ();
+
+    /**
+     * Debug logging.
+     */
     [System.Diagnostics.Conditional("DEBUG")]
     public static void debug (object msg, params object[] args)
     {
         Logger.getLogger(typeof(Importer)).info(msg, args);
     }
 
-    /**
-     * Read the next object off the underlying stream.
-     */
-    public abstract object readObject ();
-
-    public abstract T readObject<T> ();
-
-    // from IDisposable
-    abstract
-    public void Dispose ();
 }
 }
