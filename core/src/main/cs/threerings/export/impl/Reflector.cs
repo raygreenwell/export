@@ -79,6 +79,15 @@ public static class Reflector
         }
     }
 
+    // We need a new API that returns the ExportAttribute details
+    // so that it can support a box=true attribute.
+    public class ExportableFieldData
+    {
+        public readonly FieldInfo field;
+        public readonly string name;
+        public readonly object defaultValue;
+    }
+
     /** The binding flags we use to search for fields. */
     private const BindingFlags FIELD_FLAGS =
             BindingFlags.DeclaredOnly | // exclude fields from supertypes (we selectively include)

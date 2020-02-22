@@ -85,6 +85,9 @@ public class ImportingReflectiveTypeData : TypedTypeData
         {
             _type = type;
             _field = field;
+            // TODO: resolve that the fieldInfo matches the TypeData coming from the stream.
+            // For example we could have something with [Export(box=true)] and so the types don't
+            // match....
         }
 
         public void readField (ImportContext ctx, object target)
